@@ -19,11 +19,13 @@
 - **Multiple Print Layouts**:
   - **Full Page (Letter & A4)**: Generous full-sheet checklist with 1-column or balanced 2-column density options.
   - **Half-Sheet (2-Up)**: Prints two `5.5" × 8.5"` mini notepads side-by-side in landscape format with a dashed cutting line (`✂ CUT HERE ✂`). Includes toggles for:
-    - *Split Sections*: Section 1–2 on the left, Section 3–4 on the right.
-    - *Twin Copies*: Two identical copies of your list side-by-side to slice in half (give one to a partner or keep a backup).
+    - _Split Sections_: Section 1–2 on the left, Section 3–4 on the right.
+    - _Twin Copies_: Two identical copies of your list side-by-side to slice in half (give one to a partner or keep a backup).
 - **Blank Template Mode**: With one click in the toolbar, switch from "Filled Tasks" to "Blank Template" to print empty, pre-titled ruled checklists for pure pen-and-paper use.
-- **Multi-List Management**: Save and switch between multiple checklists (e.g., *Home Maintenance*, *Weekend Blitz*, *Garage & Workshop*). Everything auto-saves instantly to browser `localStorage`.
-- **Markdown & JSON Export/Import**: Export your lists to GitHub Flavored Markdown (`- [ ]`) to paste in notes, or backup/restore entire workspaces via JSON.
+- **Multi-List Management**: Save and switch between multiple checklists (e.g., _Home Maintenance_, _Weekend Blitz_, _Garage & Workshop_). Everything auto-saves instantly to browser `localStorage`.
+- **Todo.txt & Markdown Export/Import**: Full two-way support for the open [Todo.txt](http://todotxt.org/) standard (`(A) Task +Project @context due:YYYY-MM-DD`) and GitHub Flavored Markdown (`- [ ]`), plus full workspace JSON backup and restore.
+- **TodoMVC Productivity Controls**: Filter active lists by `All`, `Active`, or `Completed` to view or print only what needs doing, with live task counters, "Toggle All", and one-click "Clear Completed".
+- **Bullet Journal (BuJo) Rapid Logging**: Switch between standard checkboxes and authentic BuJo bullets (`•` Task, `✕` Done, `>` Migrated, `<` Scheduled, `★` Priority, `—` Note). Includes an elegant, laser-sharp **BuJo Key** printed in the paper footer.
 - **Keyboard-First Workflow**:
   - Press <kbd>Enter</kbd> to instantly create and jump to the next task.
   - Press <kbd>Backspace</kbd> on an empty task to delete it and move focus to the previous task.
@@ -79,13 +81,13 @@ pnpm run preview
 
 When printing from Chrome, Safari, Edge, or Firefox:
 
-| Setting | Recommended Value |
-| :--- | :--- |
-| **Destination** | Save as PDF or your physical printer |
-| **Paper Size** | **US Letter** (8.5 × 11 in) or **A4** (matching your toolbar setting) |
-| **Orientation** | **Portrait** (Full Page) or **Landscape** (Half-Sheet 2-Up) |
-| **Margins** | **Default** or **Minimum** |
-| **Headers & Footers** | **Disabled** (Honey-Do renders its own clean date & quote header/footer) |
+| Setting                 | Recommended Value                                                                |
+| :---------------------- | :------------------------------------------------------------------------------- |
+| **Destination**         | Save as PDF or your physical printer                                             |
+| **Paper Size**          | **US Letter** (8.5 × 11 in) or **A4** (matching your toolbar setting)            |
+| **Orientation**         | **Portrait** (Full Page) or **Landscape** (Half-Sheet 2-Up)                      |
+| **Margins**             | **Default** or **Minimum**                                                       |
+| **Headers & Footers**   | **Disabled** (Honey-Do renders its own clean date & quote header/footer)         |
 | **Background Graphics** | Optional (styles are built purely with CSS borders and lines for zero ink waste) |
 
 ---

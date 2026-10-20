@@ -1,9 +1,19 @@
-import React, { useRef } from 'react';
-import type { TaskSection, TaskItem, PrintContentMode } from '../types';
+import React, { useRef } from "react";
+import type {
+  TaskSection,
+  TaskItem,
+  PrintContentMode,
+  BulletStyle,
+  TaskFilter,
+  TaskSignifier,
+} from "../types";
+import { BujoBullet } from "./BujoBullet";
 
 interface SectionBlockProps {
   section: TaskSection;
   printContentMode: PrintContentMode;
+  bulletStyle?: BulletStyle;
+  taskFilter?: TaskFilter;
   onUpdateTitle: (title: string) => void;
   onDeleteSection: () => void;
   onAddTask: (text?: string) => void;
@@ -15,6 +25,8 @@ interface SectionBlockProps {
 export const SectionBlock: React.FC<SectionBlockProps> = ({
   section,
   printContentMode,
+  bulletStyle = "checkbox",
+  taskFilter = "all",
   onUpdateTitle,
   onDeleteSection,
   onAddTask,
@@ -24,10 +36,14 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
 }) => {
   const taskInputsRef = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number, task: TaskItem) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+    task: TaskItem,
+  ) => {
+    if (e.key === "Enter") {
       e.preventDefault();
-      onAddTask('');
+      onAddTask("");
       setTimeout(() => {
         const nextTasks = section.tasks;
         if (nextTasks.length > index + 1) {
@@ -37,7 +53,7 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
           }
         }
       }, 50);
-    } else if (e.key === 'Backspace' && task.text === '' && section.tasks.length > 0) {
+    } else if (e.key === "Backspace" && task.text === "" && section.tasks.length > 0) {
       e.preventDefault();
       onDeleteTask(task.id);
       if (index > 0) {
@@ -49,10 +65,32 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
     }
   };
 
-  const isBlankTemplate = printContentMode === 'blank-template';
+  const handleToggleCompleted = (task: TaskItem) => {
+    const nextCompleted = !task.completed;
+    const nextSignifier: TaskSignifier = nextCompleted ? "completed" : "todo";
+    onUpdateTask(task.id, { completed: nextCompleted, signifier: nextSignifier });
+  };
+
+  const handleSelectSignifier = (task: TaskItem, signifier: TaskSignifier) => {
+    const isCompleted = signifier === "completed";
+    onUpdateTask(task.id, {
+      signifier,
+      completed: isCompleted,
+    });
+  };
+
+  const isBlankTemplate = printContentMode === "blank-template";
   const effectiveBlankCount = isBlankTemplate
     ? Math.max(section.blankLinesCount + section.tasks.length, 5)
     : section.blankLinesCount;
+
+  // Filter tasks based on TodoMVC filter state
+  const visibleTasks = section.tasks.filter((task) => {
+    const isDone = task.completed || task.signifier === "completed";
+    if (taskFilter === "active") return !isDone;
+    if (taskFilter === "completed") return isDone;
+    return true;
+  });
 
   return (
     <div className="sheet-section">
@@ -78,7 +116,7 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
             >
               -
             </button>
-            <span style={{ minWidth: '12px', textAlign: 'center' }}>{section.blankLinesCount}</span>
+            <span style={{ minWidth: "12px", textAlign: "center" }}>{section.blankLinesCount}</span>
             <button
               type="button"
               className="stepper-btn"
@@ -96,7 +134,14 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
             title="Delete section"
             aria-label="Delete section"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -106,37 +151,72 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
       {/* Actual tasks (hidden when printContentMode === 'blank-template') */}
       {!isBlankTemplate && (
         <div className="task-list">
-          {section.tasks.map((task, idx) => (
-            <div key={task.id} className={`task-row ${task.completed ? 'completed' : ''}`}>
-              <div
-                className={`task-checkbox-mock ${task.completed ? 'checked' : ''}`}
-                onClick={() => onUpdateTask(task.id, { completed: !task.completed })}
-                title="Click to toggle checkmark"
-              />
-              <input
-                ref={(el) => {
-                  taskInputsRef.current[task.id] = el;
-                }}
-                type="text"
-                className="task-text-input"
-                value={task.text}
-                onChange={(e) => onUpdateTask(task.id, { text: e.target.value })}
-                onKeyDown={(e) => handleKeyDown(e, idx, task)}
-                placeholder="Enter task item..."
-              />
-              <button
-                type="button"
-                className="task-delete-btn no-print"
-                onClick={() => onDeleteTask(task.id)}
-                title="Delete task"
-                aria-label="Delete task"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
+          {visibleTasks.map((task, idx) => {
+            const isCompleted = task.completed || task.signifier === "completed";
+            return (
+              <div key={task.id} className={`task-row ${isCompleted ? "completed" : ""}`}>
+                <BujoBullet
+                  bulletStyle={bulletStyle}
+                  signifier={task.signifier}
+                  completed={isCompleted}
+                  onToggle={() => handleToggleCompleted(task)}
+                  onSelectSignifier={(sig) => handleSelectSignifier(task, sig)}
+                />
+
+                {/* Priority tag (Todo.txt) */}
+                {task.priority && (
+                  <span
+                    className="task-priority-tag"
+                    title={`Todo.txt Priority: (${task.priority})`}
+                  >
+                    ({task.priority})
+                  </span>
+                )}
+
+                <input
+                  ref={(el) => {
+                    taskInputsRef.current[task.id] = el;
+                  }}
+                  type="text"
+                  className="task-text-input"
+                  value={task.text}
+                  onChange={(e) => onUpdateTask(task.id, { text: e.target.value })}
+                  onKeyDown={(e) => handleKeyDown(e, idx, task)}
+                  placeholder="Enter task item..."
+                />
+
+                {/* Contexts badge if any */}
+                {task.contexts && task.contexts.length > 0 && (
+                  <div className="task-contexts-wrap">
+                    {task.contexts.map((ctx, i) => (
+                      <span key={i} className="task-context-badge">
+                        {ctx}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="task-delete-btn no-print"
+                  onClick={() => onDeleteTask(task.id)}
+                  title="Delete task"
+                  aria-label="Delete task"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -145,7 +225,11 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
         <div className="blank-lines-group">
           {Array.from({ length: effectiveBlankCount }).map((_, i) => (
             <div key={i} className="blank-ruled-line" title="Blank handwriting line for pen">
-              <div className="task-checkbox-mock" />
+              {bulletStyle === "bujo" ? (
+                <div className="bujo-blank-glyph" />
+              ) : (
+                <div className="task-checkbox-mock" />
+              )}
               <div className="blank-line-rule" />
             </div>
           ))}
@@ -157,9 +241,16 @@ export const SectionBlock: React.FC<SectionBlockProps> = ({
         <button
           type="button"
           className="btn-add-task-inline no-print"
-          onClick={() => onAddTask('')}
+          onClick={() => onAddTask("")}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M12 5v14M5 12h14" />
           </svg>
           Add Task

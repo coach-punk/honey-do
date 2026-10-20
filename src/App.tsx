@@ -1,13 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { HoneyDoList, PaperSize, LayoutMode, PrintColumns, PrintContentMode } from './types';
-import { DEFAULT_LISTS, createNewList } from './defaultLists';
-import { Sidebar } from './components/Sidebar';
-import { Toolbar } from './components/Toolbar';
-import { PaperSheet } from './components/PaperSheet';
-import { ExportImportModal } from './components/ExportImportModal';
+import { useState, useEffect, useCallback } from "react";
+import type {
+  HoneyDoList,
+  PaperSize,
+  LayoutMode,
+  PrintColumns,
+  PrintContentMode,
+  BulletStyle,
+  TaskFilter,
+  TaskItem,
+} from "./types";
+import { DEFAULT_LISTS, createNewList } from "./defaultLists";
+import { Sidebar } from "./components/Sidebar";
+import { Toolbar } from "./components/Toolbar";
+import { PaperSheet } from "./components/PaperSheet";
+import { ExportImportModal } from "./components/ExportImportModal";
+import { TodoMvcControls } from "./components/TodoMvcControls";
 
-const STORAGE_KEY_LISTS = 'honeydo_lists_storage_v1';
-const STORAGE_KEY_ACTIVE = 'honeydo_active_list_id_v1';
+const STORAGE_KEY_LISTS = "honeydo_lists_storage_v1";
+const STORAGE_KEY_ACTIVE = "honeydo_active_list_id_v1";
 
 export function App() {
   // LocalStorage initialization
@@ -19,7 +29,7 @@ export function App() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {
-      console.error('Failed to load lists from localStorage', e);
+      console.error("Failed to load lists from localStorage", e);
     }
     return DEFAULT_LISTS;
   });
@@ -29,20 +39,21 @@ export function App() {
       const savedId = localStorage.getItem(STORAGE_KEY_ACTIVE);
       if (savedId && lists.some((l) => l.id === savedId)) return savedId;
     } catch (e) {
-      console.error('Failed to load active list id', e);
+      console.error("Failed to load active list id", e);
     }
     return lists[0]?.id || DEFAULT_LISTS[0].id;
   });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [modalMode, setModalMode] = useState<'export' | 'import' | null>(null);
+  const [modalMode, setModalMode] = useState<"export" | "import" | null>(null);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
 
   // Sync lists to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_LISTS, JSON.stringify(lists));
     } catch (e) {
-      console.error('Failed to persist lists to localStorage', e);
+      console.error("Failed to persist lists to localStorage", e);
     }
   }, [lists]);
 
@@ -51,19 +62,19 @@ export function App() {
     try {
       localStorage.setItem(STORAGE_KEY_ACTIVE, activeListId);
     } catch (e) {
-      console.error('Failed to persist active id', e);
+      console.error("Failed to persist active id", e);
     }
   }, [activeListId]);
 
   // Keyboard shortcut: Cmd+P / Ctrl+P
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "p") {
         // Allow default browser print dialog
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const activeList = lists.find((l) => l.id === activeListId) || lists[0];
@@ -72,10 +83,10 @@ export function App() {
   const updateActiveList = useCallback(
     (updates: Partial<HoneyDoList>) => {
       setLists((prev) =>
-        prev.map((l) => (l.id === activeListId ? { ...l, ...updates, updatedAt: Date.now() } : l))
+        prev.map((l) => (l.id === activeListId ? { ...l, ...updates, updatedAt: Date.now() } : l)),
       );
     },
-    [activeListId]
+    [activeListId],
   );
 
   // Print trigger
@@ -84,44 +95,44 @@ export function App() {
   };
 
   // List Management
-  const handleNewList = (templateType?: 'blank' | 'maintenance' | 'weekend') => {
+  const handleNewList = (templateType?: "blank" | "maintenance" | "weekend") => {
     let newList: HoneyDoList;
-    if (templateType === 'maintenance') {
+    if (templateType === "maintenance") {
       newList = {
         ...DEFAULT_LISTS[0],
-        id: 'list-' + Math.random().toString(36).substring(2, 9),
-        title: 'HOME MAINTENANCE',
-        subtitle: 'Seasonal & Home Care',
+        id: "list-" + Math.random().toString(36).substring(2, 9),
+        title: "HOME MAINTENANCE",
+        subtitle: "Seasonal & Home Care",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-    } else if (templateType === 'weekend') {
+    } else if (templateType === "weekend") {
       newList = {
-        ...createNewList('WEEKEND BLITZ'),
-        subtitle: 'Weekend Project Checklist',
+        ...createNewList("WEEKEND BLITZ"),
+        subtitle: "Weekend Project Checklist",
         sections: [
           {
-            id: 'sec-sat-am',
-            title: 'Saturday Morning',
+            id: "sec-sat-am",
+            title: "Saturday Morning",
             blankLinesCount: 4,
-            tasks: [{ id: 't-am1', text: 'Hardware store run for supplies', completed: false }],
+            tasks: [{ id: "t-am1", text: "Hardware store run for supplies", completed: false }],
           },
           {
-            id: 'sec-sat-pm',
-            title: 'Saturday Afternoon',
+            id: "sec-sat-pm",
+            title: "Saturday Afternoon",
             blankLinesCount: 4,
             tasks: [],
           },
           {
-            id: 'sec-sun',
-            title: 'Sunday Projects & Wrap-up',
+            id: "sec-sun",
+            title: "Sunday Projects & Wrap-up",
             blankLinesCount: 4,
             tasks: [],
           },
         ],
       };
     } else {
-      newList = createNewList('HONEY-DO LIST');
+      newList = createNewList("HONEY-DO LIST");
     }
 
     setLists((prev) => [newList, ...prev]);
@@ -133,7 +144,7 @@ export function App() {
     if (!target) return;
     const duplicated: HoneyDoList = {
       ...JSON.parse(JSON.stringify(target)),
-      id: 'list-' + Math.random().toString(36).substring(2, 9),
+      id: "list-" + Math.random().toString(36).substring(2, 9),
       title: `${target.title} (Copy)`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -143,11 +154,14 @@ export function App() {
   };
 
   const handleDeleteList = (id: string) => {
-    if (lists.length <= 1) return;
-    setLists((prev) => prev.filter((l) => l.id !== id));
+    if (lists.length <= 1) {
+      alert("You must keep at least one checklist.");
+      return;
+    }
+    const remaining = lists.filter((l) => l.id !== id);
+    setLists(remaining);
     if (activeListId === id) {
-      const remaining = lists.filter((l) => l.id !== id);
-      setActiveListId(remaining[0]?.id || '');
+      setActiveListId(remaining[0]?.id || "");
     }
   };
 
@@ -155,19 +169,44 @@ export function App() {
     if (!activeList) return;
     const cleanedSections = activeList.sections.map((sec) => ({
       ...sec,
-      tasks: sec.tasks.filter((t) => !t.completed),
+      tasks: sec.tasks.filter((t) => !t.completed && t.signifier !== "completed"),
     }));
     updateActiveList({ sections: cleanedSections });
+  };
+
+  const handleToggleAll = () => {
+    if (!activeList) return;
+    let anyActive = false;
+    activeList.sections.forEach((s) => {
+      s.tasks.forEach((t) => {
+        if (!t.completed && t.signifier !== "completed") {
+          anyActive = true;
+        }
+      });
+    });
+
+    const markAs = anyActive;
+    const updated = activeList.sections.map((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => ({
+        ...t,
+        completed: markAs,
+        signifier: (markAs ? "completed" : "todo") as TaskItem["signifier"],
+      })),
+    }));
+    updateActiveList({ sections: updated });
   };
 
   // Section & Task Actions
   const handleAddSection = () => {
     if (!activeList) return;
     const newSection = {
-      id: 'sec-' + Math.random().toString(36).substring(2, 9),
-      title: 'New Section',
+      id: "sec-" + Math.random().toString(36).substring(2, 9),
+      title: "New Section",
       blankLinesCount: 3,
-      tasks: [{ id: 't-' + Math.random().toString(36).substring(2, 9), text: '', completed: false }],
+      tasks: [
+        { id: "t-" + Math.random().toString(36).substring(2, 9), text: "", completed: false },
+      ],
     };
     updateActiveList({ sections: [...activeList.sections, newSection] });
   };
@@ -175,7 +214,7 @@ export function App() {
   const handleUpdateSectionTitle = (sectionId: string, title: string) => {
     if (!activeList) return;
     const updated = activeList.sections.map((sec) =>
-      sec.id === sectionId ? { ...sec, title } : sec
+      sec.id === sectionId ? { ...sec, title } : sec,
     );
     updateActiveList({ sections: updated });
   };
@@ -189,29 +228,26 @@ export function App() {
   const handleUpdateBlankLines = (sectionId: string, count: number) => {
     if (!activeList) return;
     const updated = activeList.sections.map((sec) =>
-      sec.id === sectionId ? { ...sec, blankLinesCount: count } : sec
+      sec.id === sectionId ? { ...sec, blankLinesCount: count } : sec,
     );
     updateActiveList({ sections: updated });
   };
 
-  const handleAddTask = (sectionId: string, text = '') => {
+  const handleAddTask = (sectionId: string, text = "") => {
     if (!activeList) return;
-    const newTask = {
-      id: 't-' + Math.random().toString(36).substring(2, 9),
+    const newTask: TaskItem = {
+      id: "t-" + Math.random().toString(36).substring(2, 9),
       text,
       completed: false,
+      signifier: "todo",
     };
     const updated = activeList.sections.map((sec) =>
-      sec.id === sectionId ? { ...sec, tasks: [...sec.tasks, newTask] } : sec
+      sec.id === sectionId ? { ...sec, tasks: [...sec.tasks, newTask] } : sec,
     );
     updateActiveList({ sections: updated });
   };
 
-  const handleUpdateTask = (
-    sectionId: string,
-    taskId: string,
-    updates: Partial<{ text: string; completed: boolean; notes?: string }>
-  ) => {
+  const handleUpdateTask = (sectionId: string, taskId: string, updates: Partial<TaskItem>) => {
     if (!activeList) return;
     const updated = activeList.sections.map((sec) => {
       if (sec.id !== sectionId) return sec;
@@ -254,8 +290,8 @@ export function App() {
         onNewList={handleNewList}
         onDuplicateList={handleDuplicateList}
         onDeleteList={handleDeleteList}
-        onOpenExportModal={() => setModalMode('export')}
-        onOpenImportModal={() => setModalMode('import')}
+        onOpenExportModal={() => setModalMode("export")}
+        onOpenImportModal={() => setModalMode("import")}
         onClearCompleted={handleClearCompleted}
       />
 
@@ -274,14 +310,30 @@ export function App() {
           onChangePrintContentMode={(printContentMode: PrintContentMode) =>
             updateActiveList({ printContentMode })
           }
+          bulletStyle={activeList.bulletStyle || "checkbox"}
+          onChangeBulletStyle={(bulletStyle: BulletStyle) => updateActiveList({ bulletStyle })}
+          showBujoLegend={activeList.showBujoLegend ?? true}
+          onToggleBujoLegend={() =>
+            updateActiveList({ showBujoLegend: !(activeList.showBujoLegend ?? true) })
+          }
           onAddSection={handleAddSection}
           onPrint={handlePrint}
+        />
+
+        {/* TodoMVC Productivity Controls Bar */}
+        <TodoMvcControls
+          list={activeList}
+          currentFilter={taskFilter}
+          onChangeFilter={setTaskFilter}
+          onClearCompleted={handleClearCompleted}
+          onToggleAll={handleToggleAll}
         />
 
         {/* Paper Canvas */}
         <div className="canvas-viewport">
           <PaperSheet
             list={activeList}
+            taskFilter={taskFilter}
             onUpdateList={updateActiveList}
             onAddSection={handleAddSection}
             onUpdateSectionTitle={handleUpdateSectionTitle}
